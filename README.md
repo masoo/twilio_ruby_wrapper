@@ -22,7 +22,14 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+queues = TwilioRubyWrapper::Queue.new(account_sid: "Twilio ACCOUNT SID", auth_token: "Twilio AUTH TOKEN")
+queues.find_by(sid: "Queue SID") # return <Twilio::REST::Queue> object
+queues.find_by(friendly_name: "Queue friendly name") # return <Twilio::REST::Queue> object
+queues.condition(:gt).where(date_updated: "2017-05-31 0:0:0") # [<Twilio::REST::Queue>] array object
+# The following is an error.
+# queues.condition(:lt).where(date_updated: "2017-05-31 0:0:0").condition(:gt).where(date_updated: "2017-05-31 23:59:59")
+```
 
 ## Development
 
@@ -32,7 +39,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/twilio_ruby_wrapper. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/masoo/twilio_ruby_wrapper. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 
 ## License
