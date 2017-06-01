@@ -1,5 +1,6 @@
 require "twilio_ruby_wrapper/version"
+require "twilio-ruby"
 
 module TwilioRubyWrapper
-  # Your code goes here...
+  require 'twilio_ruby_wrapper/queue'
 end
