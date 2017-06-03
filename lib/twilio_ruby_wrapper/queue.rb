@@ -12,61 +12,36 @@ module TwilioRubyWrapper
     def find_by(*args)
       hash = args.first
 
-      if !(Hash === hash) || hash.values.any? {|v| v.nil? || Array === v || Hash === v }
+      if !(Hash === hash) || hash.values.any? {|v| v.nil? || Array === v || Hash === v } || hash.size >= 2
         raise
       end
 
-      sid = friendly_name = current_size = max_size = average_wait_time = nil
-      equivalence = -> (x) { -> (y) { x == y }}
-      keys = hash.keys
-      keys.each do |key|
-        case key
-        when :sid
-          sid = equivalence[hash[:sid]]
-        when :friendly_name
-          friendly_name = equivalence[hash[:friendly_name]]
-        when :current_size
-          current_size = equivalence[hash[:current_size]]
-        when :max_size
-          max_size = equivalence[hash[:max_size]]
-        when :average_wait_time
-          average_wait_time = equivalence[hash[:average_wait_time]]
-        else
-          raise
-        end
-      end
-
-      queue_set = @queues.list(page: @page_number, page_size: @page_size)
-      until queue_set.empty? do
-        queue = queue_set.select {|queue| comparison(queue, sid, friendly_name, current_size, max_size, average_wait_time) }.first
-        break unless queue.nil?
-        queue_set = queue_set.next_page
-      end
-      
-      queue
+      condition = self.condition(:eq)
+      condition.find_by(*args)
     end
 
-    private
+    def condition(value)
+      if !(Symbol === value)
+        raise
+      end
 
-    def comparison(queue, sid, friendly_name, current_size, max_size, average_wait_time)
-      value = false
-      unless sid.nil?
-        return false unless sid[queue.sid]
+      condition = nil
+      case value
+      when :eq
+        condition  = -> (x) { -> (y) { y == x }}
+      when :lt
+        condition  = -> (x) { -> (y) { y < x }}
+      when :lteq
+        condition  = -> (x) { -> (y) { y <= x }}
+      when :gt
+        condition  = -> (x) { -> (y) { y > x }}
+      when :gteq
+        condition  = -> (x) { -> (y) { y >= x }}
+      else
+        raise
       end
-      unless friendly_name.nil?
-        return false unless friendly_name[queue.friendly_name]
-      end
-      unless current_size.nil?
-        return false unless current_size[queue.current_size]
-      end
-      unless max_size.nil?
-        return false unless max_size[queue.max_size]
-      end
-      unless average_wait_time.nil?
-        return false unless average_wait_time[queue.average_wait_time]
-      end
-      return true
+
+      Condition.new(condition, @queues)
     end
-
   end
 end
