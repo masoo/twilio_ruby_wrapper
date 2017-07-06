@@ -1,10 +1,11 @@
 module TwilioRubyWrapper
-  class Queue
-    attr_accessor :page_number, :page_size, :queues
+  class Call
+    attr_accessor :page_number, :page_size, :calls
 
     def initialize(account_sid:, auth_token:)
       client = Twilio::REST::Client.new(account_sid, auth_token)
-      @queues = client.account.queues
+      @calls = client.account.calls
+      @filter = {}
       @page_number = 0
       @page_size = 50
     end
@@ -20,7 +21,13 @@ module TwilioRubyWrapper
       condition.find_by(*args)
     end
 
-    def condition(value)
+    def filter(*args)
+      hash = args.first
+      @filter = hash
+      self
+    end
+
+    def condition(value, filter: { page: @page_number, page_size: @page_size })
       if !(Symbol === value)
         raise
       end
@@ -41,7 +48,8 @@ module TwilioRubyWrapper
         raise
       end
 
-      QueueCondition.new(queues: @queues, condition: condition)
+      filter = @filter unless @filter.empty?
+      CallCondition.new(calls: @calls, condition: condition, filter: filter)
     end
   end
 end

@@ -1,8 +1,8 @@
 module TwilioRubyWrapper
-  class Condition
+  class QueueCondition
     attr_accessor :page_number, :page_size, :queues
 
-    def initialize(condition, queues)
+    def initialize(queues: , condition: )
       @condition = condition
       @page_number = 0
       @page_size = 50
