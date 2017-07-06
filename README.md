@@ -29,6 +29,9 @@ queues.find_by(friendly_name: "Queue friendly name") # return <Twilio::REST::Que
 queues.condition(:gt).where(date_updated: "2017-05-31 0:0:0") # [<Twilio::REST::Queue>] array object
 # The following is an error.
 # queues.condition(:lt).where(date_updated: "2017-05-31 0:0:0").condition(:gt).where(date_updated: "2017-05-31 23:59:59")
+
+calls = TwilioRubyWrapper::Call.new(account_sid: "Twilio ACCOUNT SID", auth_token: "Twilio AUTH TOKEN")
+calls.filter(:"start_time>" => "2017-05-32").condition(:eq).where(from: "PHONE NUMBER")
 ```
 
 ## Development
