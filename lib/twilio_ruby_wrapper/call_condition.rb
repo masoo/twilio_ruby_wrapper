@@ -10,7 +10,7 @@ module TwilioRubyWrapper
       true
     end
 
-    def initialize(condition: nil, filter: {}, page_number: 0, page_size: 50)
+    def initialize(condition: nil, filter: {}, page_number: 0, page_size: nil)
       @condition = condition
       @filter = filter
       @page_number = page_number
@@ -28,15 +28,10 @@ module TwilioRubyWrapper
       key = hash.keys.first
       value = build_value(hash[key], key)
 
-      params = {page: @page_number, page_size: @page_size}
+      params = {page_size: @page_size}
       params.merge!(@filter) unless @filter.empty?
       twilio_calls = @twilio_call_list.list(params)
-      calls = []
-      until twilio_calls.empty? do
-        sub_calls = twilio_calls.select{|twilio_call| @condition[value][build_value(twilio_call.send(key), key)] }.map{|twilio_call| Call.new(twilio_call) }
-        calls.concat(sub_calls) unless sub_calls.empty?
-        twilio_calls = twilio_calls.next_page
-      end
+      calls = twilio_calls.select{|twilio_call| @condition[value][build_value(twilio_call.send(key), key)] }.map{|twilio_call| Call.new(twilio_call) }
 
       calls
     end
@@ -53,15 +48,10 @@ module TwilioRubyWrapper
       key = hash.keys.first
       value = build_value(hash[key], key)
 
-      params = {page: @page_number, page_size: @page_size}
+      params = {page_size: @page_size}
       params.merge!(@filter) unless @filter.empty?
       twilio_calls = @twilio_call_list.list(params)
-      call = nil
-      until twilio_calls.empty? do
-        call = twilio_calls.select {|twilio_call| @condition[value][build_value(twilio_call.send(key), key)] }.map{|twilio_call| Call.new(twilio_call) }.first
-        break call.nil?
-        twilio_calls = twilio_calls.next_page
-      end
+      call = twilio_calls.select {|twilio_call| @condition[value][build_value(twilio_call.send(key), key)] }.map{|twilio_call| Call.new(twilio_call) }.first
 
       call
     end
@@ -117,7 +107,7 @@ module TwilioRubyWrapper
 
       def set_twilio_account
         @twilio_client = Twilio::REST::Client.new(@@account_sid, @@auth_token)
-        @twilio_call_list = @twilio_client.account.calls
+        @twilio_call_list = @twilio_client.api.account.calls
       end
   end
 end

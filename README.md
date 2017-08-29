@@ -34,7 +34,7 @@ queues = queue_condition.condition(:gt).where(date_updated: "2017-05-31 0:0:0") 
 TwilioRubyWrapper::CallCondition.set_twilio_params(account_sid: Rails.application.secrets.twilio_account_sid, auth_token: Rails.application.secrets.twilio_auth_token)
 call_condition = TwilioRubyWrapper::CallCondition.new
 call = call_condition.find_by(from: "PHONE NUMBER")
-calls = call_condition.filter(:"start_time>" => "2017-05-32").condition(:eq).where(from: "PHONE NUMBER")
+calls = call_condition.filter(start_time_after: "2017-05-31").condition(:eq).where(from: "PHONE NUMBER")
 ```
 
 ## Development
