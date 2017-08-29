@@ -1,47 +1,23 @@
 module TwilioRubyWrapper
   class Queue
-    attr_accessor :page_number, :page_size, :queues
+    attr_reader :sid, :account_sid, :friendly_name, :uri, :current_size, :average_wait_time, :max_size, :date_created, :date_updated
+    attr_accessor :queue_instance
 
-    def initialize(account_sid:, auth_token:)
-      client = Twilio::REST::Client.new(account_sid, auth_token)
-      @queues = client.account.queues
-      @page_number = 0
-      @page_size = 50
+    def initialize(twilio_queue_instance)
+      @queue_instance = twilio_queue_instance
+      @sid = @queue_instance.sid
+      @account_sid = @queue_instance.account_sid
+      @friendly_name = @queue_instance.friendly_name
+      @uri = @queue_instance.uri
+      @current_size = @queue_instance.current_size
+      @average_wait_time = @queue_instance.average_wait_time
+      @max_size = @queue_instance.max_size
+      @date_created = @queue_instance.date_created
+      @date_updated = @queue_instance.date_updated
     end
 
-    def find_by(*args)
-      hash = args.first
-
-      if !(Hash === hash) || hash.values.any? {|v| v.nil? || Array === v || Hash === v } || hash.size >= 2
-        raise
-      end
-
-      condition = self.condition(:eq)
-      condition.find_by(*args)
-    end
-
-    def condition(value)
-      if !(Symbol === value)
-        raise
-      end
-
-      condition = nil
-      case value
-      when :eq
-        condition  = -> (x) { -> (y) { y == x }}
-      when :lt
-        condition  = -> (x) { -> (y) { y < x }}
-      when :lteq
-        condition  = -> (x) { -> (y) { y <= x }}
-      when :gt
-        condition  = -> (x) { -> (y) { y > x }}
-      when :gteq
-        condition  = -> (x) { -> (y) { y >= x }}
-      else
-        raise
-      end
-
-      QueueCondition.new(queues: @queues, condition: condition)
+    def calls
+      @queue_instance.members.list().map{|twilio_call| Call.new(twilio_call) }
     end
   end
 end

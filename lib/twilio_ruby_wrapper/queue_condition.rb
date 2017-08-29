@@ -1,15 +1,23 @@
 module TwilioRubyWrapper
   class QueueCondition
     attr_accessor :page_number, :page_size, :queues
+    @@account_sid = nil
+    @@auth_token = nil
 
-    def initialize(queues: , condition: )
+    def self.set_twilio_params(account_sid:, auth_token:)
+      @@account_sid = account_sid
+      @@auth_token = auth_token
+      true
+    end
+
+    def initialize(condition: nil, page_number: 0, page_size: 50)
       @condition = condition
-      @page_number = 0
-      @page_size = 50
-      @queues = queues
+      @page_number = page_number
+      @page_size = page_size
     end
 
     def where(*args)
+      set_twilio_account()
       hash = args.first
 
       if !(Hash === hash) || hash.values.any? {|v| v.nil? || Array === v || Hash === v } || hash.size >= 2
@@ -19,18 +27,21 @@ module TwilioRubyWrapper
       key = hash.keys.first
       value = build_value(hash[key], key)
 
+      params = {page: @page_number, page_size: @page_size}
+      twilio_queues = @twilio_queue_list.list(params)
       queues = []
-      queue_set = @queues.list(page: @page_number, page_size: @page_size)
-      until queue_set.empty? do
-        t = queue_set.select {|queue| @condition[value][build_value(queue.send(key), key)] }
-        queues.concat(t) unless t.empty?
-        queue_set = queue_set.next_page
+      until twilio_queues.empty? do
+        sub_queues = twilio_queues.select{|twilio_queue| @condition[value][build_value(twilio_queue.send(key), key)] }.map{|twilio_queue| Queue.new(twilio_queue) }
+        queues.concat(sub_queues) unless sub_queues.empty?
+        twilio_queues = twilio_queues.next_page
       end
-      
+
       queues
     end
 
     def find_by(*args)
+      set_twilio_account()
+      condition(:eq)
       hash = args.first
 
       if !(Hash === hash) || hash.values.any? {|v| v.nil? || Array === v || Hash === v } || hash.size >= 2
@@ -40,15 +51,42 @@ module TwilioRubyWrapper
       key = hash.keys.first
       value = build_value(hash[key], key)
 
-      queue_set = @queues.list(page: @page_number, page_size: @page_size)
-      t = nil
-      until queue_set.empty? do
-        t = queue_set.select {|queue| @condition[value][build_value(queue.send(key), key)] }.first
-        break unless t.nil?
-        queue_set = queue_set.next_page
+      params = {page: @page_number, page_size: @page_size}
+      twilio_queues = @twilio_queue_list.list(params)
+      queue = nil
+      until twilio_queues.empty? do
+        queue = twilio_queues.select{|twilio_queue| @condition[value][build_value(twilio_queue.send(key), key)] }.map{|twilio_queue| Queue.new(twilio_queue) }.first
+        break queue.nil?
+        twilio_queues = twilio_queues.next_page
       end
-      
-      t
+
+      queue
+    end
+
+    def condition(value)
+      if !(Symbol === value)
+        raise
+      end
+
+      condition = nil
+      case value
+      when :eq
+        condition  = -> (x) { -> (y) { y == x }}
+      when :lt
+        condition  = -> (x) { -> (y) { y < x }}
+      when :lteq
+        condition  = -> (x) { -> (y) { y <= x }}
+      when :gt
+        condition  = -> (x) { -> (y) { y > x }}
+      when :gteq
+        condition  = -> (x) { -> (y) { y >= x }}
+      else
+        raise
+      end
+
+      @condition = condition
+
+      self
     end
 
     private
@@ -68,5 +106,9 @@ module TwilioRubyWrapper
         value
       end
 
+      def set_twilio_account
+        @twilio_client = Twilio::REST::Client.new(@@account_sid, @@auth_token)
+        @twilio_queue_list = @twilio_client.account.queues
+      end
   end
 end
