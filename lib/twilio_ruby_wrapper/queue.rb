@@ -25,7 +25,7 @@ module TwilioRubyWrapper
 
     def calls
       @queue_instance.members.list().map do |member|
-        Call.new(@twilio_client.account.calls.get(member.call_sid))
+        Call.new(@twilio_client.api.v2010.account.calls(member.call_sid).fetch)
       end
     end
   end
